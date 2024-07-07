@@ -20,4 +20,5 @@ from django.urls import include, path
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('blog.urls')),  # Include your app's URLs here
+    path('accounts/', include('allauth.urls')),
 ]

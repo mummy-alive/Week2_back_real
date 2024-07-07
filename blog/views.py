@@ -1,6 +1,7 @@
 from django.contrib.auth import authenticate, login
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
+from django.views.generic import TemplateView
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.decorators.http import require_GET
@@ -14,9 +15,14 @@ from .serializers import UserSerializer, UserRegistrationSerializer, PostSeriali
 from .serializers import UserRegistrationSerializer
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from allauth.socialaccount.providers import registry
 from blog.models import Member, Post
 
-class LoginView(APIView):
+class LoginTemplateView(TemplateView):
+    template_name = 'blog/login.html'
+
+class LoginAPIView(APIView):
+    template_name = 'blog/login.html'
     def post(self, request, *args, **kwargs):
         email = request.data.get('email')
         password = request.data.get('password')

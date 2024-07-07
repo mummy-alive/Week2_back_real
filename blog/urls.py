@@ -2,7 +2,8 @@ from django.urls import path
 
 from . import views
 from .views import (
-    LoginView,
+    LoginTemplateView,
+    LoginAPIView,
     LogoutView,
     RegisterView,
     get_member_profile,
@@ -13,7 +14,8 @@ from .views import (
 )
 
 urlpatterns = [
-    path('login/', LoginView.as_view(), name='login'),
+    path('login/', LoginTemplateView.as_view(), name='login'),
+    path('api/login', LoginAPIView.as_view(), name='api-login'),
     path('register/', RegisterView.as_view(), name='register'),
     path('profile/', get_member_profile, name='get_member_profile'),
     path('checkMember/', views.check_member, name='check_member'),
