@@ -7,17 +7,18 @@ class MemberManager(BaseUserManager):
     def create_member(self, email, password, name, **extra_fields):
         if not email:
             raise ValueError('The Email must be set')
-        if not password:
-            raise ValueError('The Password must be set')
-        if not name:
-            raise ValueError('The Name must be set')
+        # if not password:
+        #    raise ValueError('The Password must be set')
+        # if not name:
+        #    raise ValueError('The Name must be set')
         email = self.normalize_email(email)
-        member = self.model(email=email, name=name, **extra_fields)
+        member = self.model(email=email)
+        # member = self.model(email=email, name=name, **extra_fields)
         member.set_password(password)
         member.save(using=self._db)
         return member
     
-    def create_superuser(self, email, password, name, **extra_fields):
+    def create_superuser(self, email , **extra_fields): #, password, name, **extra_fields):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
 
@@ -26,7 +27,8 @@ class MemberManager(BaseUserManager):
         if extra_fields.get('is_superuser') is not True:
             raise ValueError(_('Superuser must have is_superuser=True.'))
 
-        return self.create_member(email, password, name, **extra_fields)
+        return self.create_member(email, **extra_fields)
+        #return self.create_member(email, password, name, **extra_fields)
 
 class Member(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True)  
@@ -42,23 +44,9 @@ class Member(AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return self.email
 
-    def has_perm(self, perm, obj=None):
-        """
-        Does the user have a specific permission?
-        """
-        # Simplest possible answer: Yes, always
-        return True
-
-    def has_module_perms(self, app_label):
-        """
-        Does the user have permissions to view the app `app_label`?
-        """
-        # Simplest possible answer: Yes, always
-        return True    
-
 class Post(models.Model):
     post_id = models.AutoField(primary_key=True)
-    writer = models.ForeignKey(Member, on_delete=models.CASCADE, null=True)
+    writer = models.ForeignKey(Member, on_delete=models.CASCADE)
     title = models.CharField(max_length=70)
     content = models.CharField(max_length=200)
     post_tag = models.PositiveIntegerField()
@@ -66,3 +54,6 @@ class Post(models.Model):
     
     def __str__(self):
         return self.title
+
+    def created_at_seoul_time(self):
+        return self.created_at.astimezone(timezone.get_default_timezone()).strftime("%Y-%m-%d %H:%M")
