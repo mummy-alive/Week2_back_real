@@ -16,7 +16,7 @@ from .serializers import UserRegistrationSerializer
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from allauth.socialaccount.providers import registry
-from blog.models import User, Post, Profile
+from blog.models import User, Post, Profile, UserLike, UserBlock
 
 class LoginTemplateView(TemplateView):
     template_name = 'blog/login.html'
@@ -113,7 +113,10 @@ class ProfileList(generics.ListCreateAPIView):
     permission_classes = [AllowAny]
     
     def get_queryset(self):
-        return Profile.objects.filter(is_recruit=True)
+        user = self.request.user
+        liked_user_ids = UserLike.objects.filter(from_id=user).values_list('to_id', flat=True)
+        blocked_user_ids = UserBlock.objects.filter(from_id=user).values_list('to_id', flat=True)
+        return Profile.objects.filter(is_recruit=True).exclude(email__in=liked_user_ids).exclude(email__in=blocked_user_ids)
 
 def check_user_by_mail(request, email):
     user_exists = User.objects.filter(email=email).exists()

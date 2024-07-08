@@ -1,6 +1,6 @@
 from django.contrib.auth.hashers import make_password
 from rest_framework import serializers
-from .models import User, Post, Profile, TechTag, ProfileTechTag
+from .models import User, Post, UserLike, UserBlock, Profile, TechTag, ProfileTechTag
 
 # serializer: 데이터베이스에서 뽑은 데이터를 json으로 직렬화 or 역직렬화해주는 부분
 class UserRegistrationSerializer(serializers.ModelSerializer):
@@ -26,6 +26,17 @@ class UserSerializer(serializers.ModelSerializer): #직렬화
         model = User
         fields = ['id', 'email', 'name']
         extra_kwargs = {'email': {'read_only': True}}
+
+class UserLikeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserLike
+        fields = '__all__'
+
+class UserBlockSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserBlock
+        fields = '__all__'
+
 
 class PostSerializer(serializers.ModelSerializer): #역직렬화
     writer = UserSerializer(read_only=True)

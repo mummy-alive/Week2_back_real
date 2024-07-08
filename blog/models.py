@@ -39,6 +39,23 @@ class User(AbstractBaseUser, PermissionsMixin):
     
     def __str__(self):
         return self.email
+    
+class UserLike(models.Model):
+    from_id = models.ForeignKey(User, related_name='likes_sent', on_delete=models.CASCADE)
+    to_id = models.ForeignKey(User, related_name='likes_received', on_delete=models.CASCADE)
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['from_id', 'to_id'], name='unique_user_like')
+        ]
+    
+class UserBlock(models.Model):
+    block_id = models.AutoField(primary_key=True) # 지울 것
+    from_id = models.ForeignKey(User, related_name='blocks_sent', on_delete=models.CASCADE)
+    to_id = models.ForeignKey(User, related_name='blocks_received', on_delete=models.CASCADE)
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['from_id', 'to_id'], name='unique_user_block')
+        ]
 
 class Profile(models.Model):
     profile_id = models.AutoField(primary_key=True)
