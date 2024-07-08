@@ -9,14 +9,13 @@ from rest_framework.authtoken.models import Token
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, viewsets, generics
-from blog.models import Member
 
 from .serializers import UserSerializer, UserRegistrationSerializer, PostSerializer
 from .serializers import UserRegistrationSerializer
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from allauth.socialaccount.providers import registry
-from blog.models import Member, Post
+from blog.models import Member, Profile, Post
 
 class LoginTemplateView(TemplateView):
     template_name = 'blog/login.html'
@@ -109,6 +108,10 @@ class PostListCreateView(generics.ListCreateAPIView):   #게시물 생성
     def perform_create(self, serializer):
         serializer.save(writer=self.request.member)
 
-def check_member_by_mail(request, email):
+class MatchViewSet(): #3번탭 - 매칭 화면
+    queryset = Profile.objects.all()
+    
+
+def check_member_by_mail(request, email):       # 얜 뭐임
     member_exists = Member.objects.filter(email=email).exists()
     return JsonResponse({'exists': member_exists})
