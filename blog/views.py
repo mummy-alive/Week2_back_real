@@ -11,12 +11,12 @@ from rest_framework.response import Response
 from rest_framework import status, viewsets, generics
 from blog.models import User
 
-from .serializers import UserSerializer, UserRegistrationSerializer, PostSerializer
+from .serializers import UserSerializer, UserRegistrationSerializer, PostSerializer, ProfileSerializer
 from .serializers import UserRegistrationSerializer
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from allauth.socialaccount.providers import registry
-from blog.models import User, Post
+from blog.models import User, Post, Profile
 
 class LoginTemplateView(TemplateView):
     template_name = 'blog/login.html'
@@ -84,10 +84,10 @@ def get_user_profile(request):
     serializer = UserSerializer(user)
     return Response(serializer.data)
 
-def HomeView(request):          # 1번탭
+def HomeView(request):          # 온보딩
     return HttpResponse("Welcome to the home page!")
 
-class PostViewSet(viewsets.ModelViewSet):   
+class MainViewSet(viewsets.ModelViewSet):  # 1번탭
     queryset = Post.objects.all()
     serializer_class = PostSerializer
 
@@ -108,6 +108,14 @@ class PostListCreateView(generics.ListCreateAPIView):   #게시물 생성
     def perform_create(self, serializer):
         serializer.save(writer=self.request.user)
 
+class ProfileList(generics.ListCreateAPIView):
+    serializer_class = ProfileSerializer
+    permission_classes = [AllowAny]
+    
+    def get_queryset(self):
+        return Profile.objects.filter(is_recruit=True)
+
 def check_user_by_mail(request, email):
     user_exists = User.objects.filter(email=email).exists()
     return JsonResponse({'exists': user_exists})
+
