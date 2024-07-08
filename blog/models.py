@@ -44,19 +44,6 @@ class Profile(models.Model):
     profile_id = models.AutoField(primary_key=True)
     email = models.OneToOneField(User, on_delete=models.CASCADE)
     
-    '''class TechTag(models.IntegerChoices):
-        Tag1 = 1, '프론트엔드'
-        Tag2 = 2, '백엔드'
-        Tag3 = 3, '풀스택'
-        Tag4 = 4, '인공지능'
-        Tag5 = 5, '게임'
-        Tag6 = 6, '웹개발'
-        Tag7 = 7, '앱개발'
-        Tag8 = 8, 'OS개발'
-        Tag9 = 9, 'UI 디자인'
-        Tag10 = 10, 'Kotlin'
-        Tag11 = 11, 'Java'''
-    
     class ClassTag(models.IntegerChoices):
         Tag1 = 1, '1분반'
         Tag2 = 2, '2분반'
@@ -85,9 +72,26 @@ class Profile(models.Model):
     mbti = models.CharField(choices = MBTI.choices, max_length = 4, default=MBTI.INFJ)
     interest = models.CharField(max_length = 200)
     is_recruit = models.BooleanField(default=True)
-    
+
     def __str__(self):
         return f'{self.email.email} - {self.mbti}'
+
+class TechTag(models.Model):      
+    tech_tag_id = models.AutoField(primary_key=True)
+    tech_tag_name = models.CharField(max_length=40)
+
+class ProfileTechTag(models.Model):
+    profile_id = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name ='profile_tech_tags')
+    tech_tag_id = models.ForeignKey(TechTag, on_delete=models.CASCADE, related_name ='profile_tech_tags')
+    # primary key는 (profile_id, tech_tag_id)
+    
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['profile_id', 'tech_tag_id'], name='unique_profile_tech_tag')
+        ]
+        
+    def __str__(self):
+        return f"{self.profile_id} - {self.tech_tag_id}"
 
 class Post(models.Model):
     post_id = models.AutoField(primary_key=True)
