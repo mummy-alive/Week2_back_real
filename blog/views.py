@@ -85,19 +85,19 @@ def get_member_profile(request):
     serializer = UserSerializer(member)
     return Response(serializer.data)
 
-def HomeView(request):
+def HomeView(request):          # 1번탭
     return HttpResponse("Welcome to the home page!")
 
-class PostViewSet(viewsets.ModelViewSet):
+class PostViewSet(viewsets.ModelViewSet):   
     queryset = Post.objects.all()
     serializer_class = PostSerializer
 
-class PostList(generics.ListCreateAPIView):
+class PostList(generics.ListCreateAPIView): # 2번탭
     queryset = Post.objects.all()
     serializer_class = PostSerializer
     permission_classes = [AllowAny]
 
-class PostDetail(generics.RetrieveUpdateDestroyAPIView):
+class PostDetail(generics.RetrieveUpdateDestroyAPIView):    # 2번탭 - Post 세부내용
     queryset = Post.objects.all()
     serializer_class = PostSerializer
     permission_classes = [AllowAny]
