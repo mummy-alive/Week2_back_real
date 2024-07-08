@@ -9,40 +9,39 @@ from rest_framework.authtoken.models import Token
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, viewsets, generics
-from blog.models import Member
+from blog.models import User
 
 from .serializers import UserSerializer, UserRegistrationSerializer, PostSerializer
 from .serializers import UserRegistrationSerializer
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from allauth.socialaccount.providers import registry
-from blog.models import Member, Post
+from blog.models import User, Post
 
 class LoginTemplateView(TemplateView):
     template_name = 'blog/login.html'
 
 class LoginAPIView(APIView):
-    template_name = 'blog/login.html'
     def post(self, request, *args, **kwargs):
         email = request.data.get('email')
         password = request.data.get('password')
         print(f'Email: {email}, Pasword: {password}')
-        member = authenticate(request, email=email, password=password)
-        print(f'Authenticated user: {member}')
-        if member is not None:
+        user = authenticate(request, email=email, password=password)
+        print(f'Authenticated user: {user}')
+        if user is not None:
             # User authentication successful
-            login(request, member)
-            token, created = Token.objects.get_or_create(user=member)
-            return Response({'token': token.key, 'user': UserSerializer(member).data})
-            # return Response(UserSerializer(member).data)
+            login(request, user)
+            token, created = Token.objects.get_or_create(user=user)
+            return Response({'token': token.key, 'user': UserSerializer(user).data})
+            # return Response(UserSerializer(user).data)
         else:
             return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
             '''try:
                 # Try to get a user with the given email
-                member = Member.objects.get(email=email)
+                user = user.objects.get(email=email)
                 # User with the email exists, so the password must be incorrect
                 return Response({"error": "Incorrect password"}, status=status.HTTP_400_BAD_REQUEST)
-            except Member.DoesNotExist:
+            except User.DoesNotExist:
                 # User with the email does not exist
                 return Response({"error": "User with this email does not exist"}, status=status.HTTP_400_BAD_REQUEST)'''
 
@@ -50,21 +49,21 @@ class RegisterView(APIView):
     def post(self, request, *args, **kwargs):
         serializer = UserRegistrationSerializer(data=request.data)
         if serializer.is_valid():
-            member = serializer.save()
-            token, created = Token.objects.get_or_create(user=member)
+            user = serializer.save()
+            token, created = Token.objects.get_or_create(user=user)
             return Response({'token':token.key,
                              "message": "User registered successfully"}, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @require_GET
-def check_member(request):
+def check_user(request):
     email = request.GET.get('email', None)
     response_data = {'exists': False}
 
     if email:
         try:
-            member = Member.objects.get(email=email)
+            user = User.objects.get(email=email)
             response_data['exists'] = True
         except ObjectDoesNotExist:
             response_data['exists'] = False
@@ -75,14 +74,14 @@ class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
     
     def post(self, request):
-        request.member.auth_token.delete()
+        request.user.auth_token.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def get_member_profile(request):
-    member = request.member
-    serializer = UserSerializer(member)
+def get_user_profile(request):
+    user = request.user
+    serializer = UserSerializer(user)
     return Response(serializer.data)
 
 def HomeView(request):          # 1번탭
@@ -107,8 +106,8 @@ class PostListCreateView(generics.ListCreateAPIView):   #게시물 생성
     serializer_class = PostSerializer
     
     def perform_create(self, serializer):
-        serializer.save(writer=self.request.member)
+        serializer.save(writer=self.request.user)
 
-def check_member_by_mail(request, email):
-    member_exists = Member.objects.filter(email=email).exists()
-    return JsonResponse({'exists': member_exists})
+def check_user_by_mail(request, email):
+    user_exists = User.objects.filter(email=email).exists()
+    return JsonResponse({'exists': user_exists})

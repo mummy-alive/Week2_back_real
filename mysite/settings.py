@@ -120,7 +120,7 @@ DATABASES = {
     }
 }
 
-AUTH_USER_MODEL = 'blog.Member'
+AUTH_USER_MODEL = 'blog.User'
 
 
 # Password validation

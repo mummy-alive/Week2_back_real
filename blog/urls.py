@@ -6,22 +6,22 @@ from .views import (
     LoginAPIView,
     LogoutView,
     RegisterView,
-    get_member_profile,
+    get_user_profile,
     HomeView,
     PostList,
     PostDetail,
-    check_member_by_mail,
+    check_user_by_mail,
 )
 
 urlpatterns = [
     path('login/', LoginTemplateView.as_view(), name='login'),
     path('api/login', LoginAPIView.as_view(), name='api-login'),
     path('register/', RegisterView.as_view(), name='register'),
-    path('profile/', get_member_profile, name='get_member_profile'),
-    path('checkMember/', views.check_member, name='check_member'),
+    path('profile/', get_user_profile, name='get_user_profile'),
+    path('checkUser/', views.check_user, name='check_user'),
     path('logout/', LogoutView.as_view(), name='logout'),
     path('', HomeView, name='home'),
     path('posts/', PostList.as_view(), name='post-list'),
     path('posts/<int:pk>/', PostDetail.as_view(), name='post-detail'),
-#    path('checkMemberByMail/<str:Mail>/', check_member_by_mail, name='check_member_by_Mail'),
+#    path('checkUserByMail/<str:Mail>/', check_user_by_mail, name='check_user_by_Mail'),
 ]
