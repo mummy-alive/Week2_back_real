@@ -1,6 +1,6 @@
 from django.contrib.auth.hashers import make_password
 from rest_framework import serializers
-from .models import User, Post
+from .models import User, Post, Profile
 
 # serializer: 데이터베이스에서 뽑은 데이터를 json으로 직렬화 or 역직렬화해주는 부분
 class UserRegistrationSerializer(serializers.ModelSerializer):
@@ -32,3 +32,9 @@ class PostSerializer(serializers.ModelSerializer): #역직렬화
     class Meta:
         model = Post
         fields = ['post_id', 'writer', 'title', 'content', 'post_tag', 'created_at']
+
+class ProfileSerializer(serializers.ModelSerializer):
+    email = UserSerializer(read_only=True)
+    class Meta:
+        model = Profile
+        fields = ['profile_id', 'email', 'class_tag', 'mbti', 'interest', 'is_recruit']
