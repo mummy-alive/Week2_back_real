@@ -21,7 +21,7 @@ urlpatterns = [
     path('checkUser/', views.check_user, name='check_user'),
     path('logout/', LogoutView.as_view(), name='logout'),
     path('', HomeView, name='home'),
-    path('posts/', PostList.as_view(), name='post-list'),
-    path('posts/<int:pk>/', PostDetail.as_view(), name='post-detail'),
+    path('api/posts/', PostList.as_view(), name='post-list'),
+    path('api/posts/<int:pk>/', PostDetail.as_view(), name='post-detail'),
 #    path('checkUserByMail/<str:Mail>/', check_user_by_mail, name='check_user_by_Mail'),
 ]

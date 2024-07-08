@@ -56,7 +56,7 @@ class RegisterView(APIView):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-@require_GET
+@require_GET    #클라이언트의 요청이 들어오면:
 def check_user(request):
     email = request.GET.get('email', None)
     response_data = {'exists': False}
@@ -77,7 +77,7 @@ class LogoutView(APIView):
         request.user.auth_token.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-@api_view(['GET'])
+@api_view(['GET']) 
 @permission_classes([IsAuthenticated])
 def get_user_profile(request):
     user = request.user
