@@ -20,7 +20,6 @@ urlpatterns = [
     path('register/', RegisterView.as_view(), name='register'),
 
     path('api/profile/', ProfileList.as_view(), name='profile-list'),
-    
     path('checkUser/', views.check_user, name='check_user'),
     path('logout/', LogoutView.as_view(), name='logout'),
     

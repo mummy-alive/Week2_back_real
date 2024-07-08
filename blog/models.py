@@ -81,8 +81,8 @@ class TechTag(models.Model):
     tech_tag_name = models.CharField(max_length=40)
 
 class ProfileTechTag(models.Model):
-    profile_id = models.ForeignKey(Profile, on_delete=models.CASCADE)
-    tech_tag_id = models.ForeignKey(TechTag, on_delete=models.CASCADE)
+    profile_id = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name ='profile_tech_tags')
+    tech_tag_id = models.ForeignKey(TechTag, on_delete=models.CASCADE, related_name ='profile_tech_tags')
     # primary key는 (profile_id, tech_tag_id)
     
     class Meta:
