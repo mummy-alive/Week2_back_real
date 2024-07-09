@@ -22,6 +22,7 @@ from .views import (
     check_user_by_mail,
     like_user,
     block_user,
+    scrap_post,
 )
 
 urlpatterns = [
@@ -36,7 +37,8 @@ urlpatterns = [
 
     path('api/posts/', PostList.as_view(), name='postlist'),                #2번탭 - 전체리스트
     path('api/posts/<int:pk>/', PostDetail.as_view(), name='post-detail'),  #2번탭 - 상세보기
-
+    path('api/posts/<int:post_id>/scrap/', scrap_post, name='scrap-post'),
+    
     path('api/profilelist/', ProfileList.as_view(), name='profile-list'),   # 3번탭
     path('api/like/', like_user, name='like_user'),                         # 좋아요
     path('api/block/', block_user, name='block_user'),                      # 싫어요

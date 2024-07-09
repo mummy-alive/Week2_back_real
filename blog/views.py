@@ -193,6 +193,17 @@ def block_user(request, user_id):
     else:
         return Response({'status': 'already blocked'}, status=status.HTTP_200_OK)
 
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def scrap_post(request, post_id):
+    post = get_object_or_404(Post, pk=post_id)
+    scrap, created = PostScrap.objects.get_or_create(user_id=request.user, post_id=post)
+    
+    if created:
+        return Response({'status': 'scrapped'}, status=status.HTTP_201_CREATED)
+    else:
+        return Response({'status': 'already scrapped'}, status=status.HTTP_200_OK)
+
 def check_user_by_mail(request, email):
     user_exists = User.objects.filter(email=email).exists()
     return JsonResponse({'exists': user_exists})
