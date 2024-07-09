@@ -16,11 +16,13 @@ def AIMatchmake(user_profile, other_profiles):
     Here is the user's profile for reference: {json.dumps(user_profile)}
     Here is the list of other profiles: {json.dumps(other_profiles)}
     """
-
-    try:
-        response = model.generate(prompt=prompt, max_tokens=200)
-        response_data = json.loads(response.generations[0].text)
-        return response_data
-    except Exception as e:
-        print(f"Error in AIMatchmake: {e}")
-        return []
+    repeat = 0
+    while repeat < 5:
+        try:
+            response = model.generate(prompt=prompt, max_tokens=200)
+            response_data = json.loads(response.generations[0].text)
+            return response_data
+        except Exception as e:
+            print(f"Error in AIMatchmake: {e}")
+            repeat += 1    
+    return []
