@@ -17,6 +17,7 @@ from .views import (
     ProfileList,
     LikeList,
     BlockList,
+    ScrapList,
     check_user_by_mail,
     like_user,
     block_user,
@@ -45,6 +46,7 @@ urlpatterns = [
     #path('api/myTab/profile'),  # 5번탭 내프로필 수정
     path('api/myTab/likelist/', LikeList.as_view(), name='like-list'),  #5번탭 좋아요 누른 사람
     path('api/myTab/blocklist/', BlockList.as_view(), name='block-list'),   #5번탭 블락한 사람
+    path('api/myTab/scraplist/', ScrapList.as_view(), name='scrap-list'),
 
     path('api/posts/', PostList.as_view(), name='postlist'),
     path('api/posts/<int:pk>/', PostDetail.as_view(), name='post-detail'),

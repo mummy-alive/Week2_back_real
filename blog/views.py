@@ -11,7 +11,7 @@ from rest_framework.response import Response
 from rest_framework import status, viewsets, generics
 from blog.models import User
 
-from .serializers import UserSerializer, UserRegistrationSerializer, PostSerializer, ProfileSerializer
+from .serializers import UserSerializer, UserRegistrationSerializer, PostSerializer, ProfileSerializer, PostScrapSerializer
 from .serializers import UserRegistrationSerializer
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -149,13 +149,13 @@ class BlockList(generics.ListCreateAPIView):
         return Profile.objects.filter(email__in=blocked_user_ids)
     
 class ScrapList(generics.ListCreateAPIView):
-    serializer_class = ProfileSerializer
+    serializer_class = PostScrapSerializer
     permission_classes = [IsAuthenticated] #권한수정 필요할수도?
 
     def get_queryset(self):
         user = self.request.user
-        scrap_user_ids = PostScrap.objects.filter(user_id=user).values_list('post_id', flat=True)
-        return Profile.objects.filter(email__in=scrap_user_ids)
+        scrap_post_ids = PostScrap.objects.filter(user_id=user).values_list('post_id', flat=True)
+        return Post.objects.filter(id__in=scrap_post_ids)
     
 
 @api_view(['POST'])
