@@ -147,6 +147,34 @@ class BlockList(generics.ListCreateAPIView):
         user = self.request.user
         blocked_user_ids = UserBlock.objects.filter(from_id=user).values_list('to_id',flat=True)
         return Profile.objects.filter(email__in=blocked_user_ids)
+    
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def like_user(request,user_id):
+    try:
+        to_user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return Response({'error': 'User does not exist'}, status=status.HTTP_404_NOT_FOUND)
+    like, created = UserLike.objects.get_or_create(from_id=request.user, to_id=to_user)
+    if created:
+        return Response({'status': 'liked'}, status=status.HTTP_201_CREATED)
+    else:
+        return Response({'status': 'already liked'}, status=status.HTTP_200_OK)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def block_user(request, user_id):
+    try:
+        to_user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return Response({'error': 'User does not exist'}, status=status.HTTP_404_NOT_FOUND)
+
+    block, created = UserBlock.objects.get_or_create(from_id=request.user, to_id=to_user)
+    if created:
+        return Response({'status': 'blocked'}, status=status.HTTP_201_CREATED)
+    else:
+        return Response({'status': 'already blocked'}, status=status.HTTP_200_OK)
 
 def check_user_by_mail(request, email):
     user_exists = User.objects.filter(email=email).exists()
