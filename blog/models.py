@@ -49,7 +49,6 @@ class UserLike(models.Model):
         ]
     
 class UserBlock(models.Model):
-    block_id = models.AutoField(primary_key=True) # 지울 것
     from_id = models.ForeignKey(User, related_name='blocks_sent', on_delete=models.CASCADE)
     to_id = models.ForeignKey(User, related_name='blocks_received', on_delete=models.CASCADE)
     class Meta:
@@ -123,3 +122,11 @@ class Post(models.Model):
 
     def created_at_seoul_time(self):
         return self.created_at.astimezone(timezone.get_default_timezone()).strftime("%Y-%m-%d %H:%M")
+    
+class PostScrap(models.Model):
+    user_id = models.ForeignKey(User, related_name='scraps', on_delete=models.CASCADE)
+    post_id = models.ForeignKey(Post, related_name='scraps', on_delete=models.CASCADE)
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['user_id', 'post_id'], name='unique_user_post')
+        ]

@@ -16,7 +16,7 @@ from .serializers import UserRegistrationSerializer
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from allauth.socialaccount.providers import registry
-from blog.models import User, Post, Profile, UserLike, UserBlock
+from blog.models import User, Post, PostScrap, Profile, UserLike, UserBlock
 from blog.gemini_api import AIMatchmake
 
 class LoginTemplateView(TemplateView):
@@ -147,6 +147,15 @@ class BlockList(generics.ListCreateAPIView):
         user = self.request.user
         blocked_user_ids = UserBlock.objects.filter(from_id=user).values_list('to_id',flat=True)
         return Profile.objects.filter(email__in=blocked_user_ids)
+    
+class ScrapList(generics.ListCreateAPIView):
+    serializer_class = ProfileSerializer
+    permission_classes = [IsAuthenticated] #권한수정 필요할수도?
+
+    def get_queryset(self):
+        user = self.request.user
+        scrap_user_ids = PostScrap.objects.filter(user_id=user).values_list('post_id', flat=True)
+        return Profile.objects.filter(email__in=scrap_user_ids)
     
 
 @api_view(['POST'])
