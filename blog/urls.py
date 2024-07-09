@@ -1,6 +1,7 @@
-from django.urls import path
+from django.urls import path, include
 
 from . import views
+from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
@@ -19,6 +20,7 @@ from .views import (
     LikeList,
     BlockList,
     ScrapList,
+    MainViewSet,
     check_user_by_mail,
     like_user,
     block_user,
@@ -26,7 +28,13 @@ from .views import (
     create_post,
 )
 
+#router = DefaultRouter()
+#router.register(r'main', MainViewSet, basename='main')  # MainViewSet을 
+
 urlpatterns = [
+    # path('', include(router.urls)),
+    path('api/main/', MainViewSet.as_view({'get': 'list'}), name='main'),
+
     path('login/', LoginTemplateView.as_view(), name='login'),
     path('api/login/', LoginAPIView.as_view(), name='api-login'),
     path('register/', RegisterView.as_view(), name='register'),
@@ -35,7 +43,7 @@ urlpatterns = [
     path('api/token/refresh', TokenRefreshView.as_view(), name='token-refresh'),
 
     # ToDo: Create Tab1 View
-
+    # path('api/main/', MainViewSet.as_view(), name='main'),
     path('api/posts/', PostList.as_view(), name='postlist'),                # 2번탭 - 전체리스트
     path('api/posts/create/', create_post, name='create-post'),             # 2번탭 - 게시글 작성
     path('api/posts/<int:pk>/', PostDetail.as_view(), name='post-detail'),  # 2번탭 - 상세보기

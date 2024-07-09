@@ -88,3 +88,7 @@ class PostSerializer(serializers.ModelSerializer): #역직렬화
     # def get_tech_tags(self, obj):
     #     post_tech_tags = PostTechTag.objects.filter(post_id = obj.post_id)
     #     return PostTechTagSerializer(post_tech_tags, many=True).data
+
+class MainViewSetSerializer(serializers.Serializer):
+    recent_posts = PostSerializer(many=True)
+    profiles = ProfileSerializer(many=True)

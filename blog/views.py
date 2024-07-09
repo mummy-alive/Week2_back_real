@@ -7,6 +7,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.views.decorators.http import require_GET
 from rest_framework.authtoken.models import Token
 from rest_framework.views import APIView
+from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import status, viewsets, generics
 from blog.models import User
@@ -97,9 +98,33 @@ def get_user_profile(request):
 def HomeView(request):          # 온보딩
     return HttpResponse("Welcome to the home page!")
 
-class MainViewSet(viewsets.ModelViewSet):  # 1번탭
-    queryset = Post.objects.all()
-    serializer_class = PostSerializer
+class MainViewSet(viewsets.ViewSet):  # 1번탭
+    permission_classes = [IsAuthenticated]
+
+    def list(self, request):
+        recent_posts = Post.objects.order_by('-created_at')[:4]
+
+        user = request.user
+        liked_user_ids = UserLike.objects.filter(from_id=user).values_list('to_id', flat=True)
+        blocked_user_ids = UserBlock.objects.filter(from_id=user).values_list('to_id', flat=True)
+
+        filtered_profiles = Profile.objects.filter(is_recruit=True).exclude(email__in=liked_user_ids).exclude(email__in=blocked_user_ids)
+        other_profiles = ProfileSerializer(filtered_profiles, many=True).data
+
+        user_profile = Profile.objects.get(email=user.email)
+        user_profile_dict = ProfileSerializer(user_profile).data
+
+        matched_profiles = AIMatchmake(user_profile_dict, other_profiles)
+        matched_emails = [profile['email']['email'] for profile in matched_profiles]
+
+        profiles = Profile.objects.filter(email__email__in=matched_emails)[:4]
+
+        response_data = {
+            'recent_posts': PostSerializer(recent_posts, many=True).data,
+            'profiles': ProfileSerializer(profiles, many=True).data
+        }
+
+        return Response(response_data)
 
 class PostList(generics.ListCreateAPIView): # 2번탭
     queryset = Post.objects.all()
