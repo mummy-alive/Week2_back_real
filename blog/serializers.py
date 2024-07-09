@@ -71,13 +71,20 @@ class PostTechTagSerializer(serializers.ModelSerializer):
         fields = ['tech_tag']
 
 class PostSerializer(serializers.ModelSerializer): #역직렬화
-    tech_tags = PostTechTagSerializer(source='post_tech_tags', many=True)
+    tech_tags = PostTechTagSerializer(source='post_tech_tags', many=True, required=False)
     writer = UserSerializer(read_only=True)
     
     class Meta:
         model = Post
         fields = ['post_id', 'writer', 'title', 'content', 'post_tag', 'created_at', 'tech_tags']
-        
+    
+    def create(self, validated_data):
+        tech_tags_data = validated_data.pop('post_tech_tags', [])
+        post = Post.objects.create(**validated_data)
+        for tech_tag_data in tech_tags_data:
+            PostTechTag.objects.create(post=post, **tech_tag_data)
+        return post
+    
     # def get_tech_tags(self, obj):
     #     post_tech_tags = PostTechTag.objects.filter(post_id = obj.post_id)
     #     return PostTechTagSerializer(post_tech_tags, many=True).data
