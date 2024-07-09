@@ -118,6 +118,25 @@ class ProfileList(generics.ListCreateAPIView):
         blocked_user_ids = UserBlock.objects.filter(from_id=user).values_list('to_id', flat=True)
         return Profile.objects.filter(is_recruit=True).exclude(email__in=liked_user_ids).exclude(email__in=blocked_user_ids)
 
+
+class LikeList(generics.ListCreateAPIView):
+    serializer_class = ProfileSerializer
+    permission_classes = [IsAuthenticated] #권한수정 필요할수도?
+
+    def get_queryset(self):
+        user = self.request.user
+        liked_user_ids = UserLike.objects.filter(from_id=user).values_list('to_id', flat=True)
+        return Profile.objects.filter(email__in=liked_user_ids)
+    
+class BlockList(generics.ListCreateAPIView):
+    serializer_class = ProfileSerializer
+    permission_classes = [IsAuthenticated] #권한수정 필요할수도?
+
+    def get_queryset(self):
+        user = self.request.user
+        blocked_user_ids = UserBlock.objects.filter(from_id=user).values_list('to_id',flat=True)
+        return Profile.objects.filter(email__in=blocked_user_ids)
+
 def check_user_by_mail(request, email):
     user_exists = User.objects.filter(email=email).exists()
     return JsonResponse({'exists': user_exists})
