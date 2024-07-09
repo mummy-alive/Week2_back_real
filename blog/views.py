@@ -17,6 +17,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from allauth.socialaccount.providers import registry
 from blog.models import User, Post, Profile, UserLike, UserBlock
+from blog.gemini_api import AIMatchmake
 
 class LoginTemplateView(TemplateView):
     template_name = 'blog/login.html'
@@ -116,8 +117,21 @@ class ProfileList(generics.ListCreateAPIView):
         user = self.request.user
         liked_user_ids = UserLike.objects.filter(from_id=user).values_list('to_id', flat=True)
         blocked_user_ids = UserBlock.objects.filter(from_id=user).values_list('to_id', flat=True)
-        return Profile.objects.filter(is_recruit=True).exclude(email__in=liked_user_ids).exclude(email__in=blocked_user_ids)
+        filtered_profiles = Profile.objects.filter(is_recruit=True).exclude(email__in=liked_user_ids).exclude(email__in=blocked_user_ids)
+        other_profiles = list(filtered_profiles.values('profile_id', 'email', 'class_tag', 'mbti', 'interest', 'is_recruit'))
 
+        user_profile = Profile.objects.get(email=user.email)
+        user_profile_dict = {
+            'profile_id': user_profile.profile_id,
+            'email': user_profile.email.email,
+            'class_tag': user_profile.class_tag,
+            'mbti': user_profile.mbti,
+            'interest': user_profile.interest,
+            'is_recruit': user_profile.is_recruit
+        }
+        matched_profiles = AIMatchmake(user_profile_dict, other_profiles)
+        matched_emails = [profile['email'] for profile in matched_profiles]
+        return Profile.objects.filter(email_email__in=matched_emails)
 
 class LikeList(generics.ListCreateAPIView):
     serializer_class = ProfileSerializer
