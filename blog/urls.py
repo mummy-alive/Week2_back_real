@@ -31,7 +31,7 @@ urlpatterns = [
     path('api/token/refresh', TokenRefreshView.as_view(), name='token-refresh'),
 
     path('api/profilelist/', ProfileList.as_view(), name='profile-list'),   # 3번탭
-     path('api/like/', like_user, name='like_user'),
+    path('api/like/', like_user, name='like_user'),
     path('api/block/', block_user, name='block_user'),
     
     path('checkUser/', views.check_user, name='check_user'),
