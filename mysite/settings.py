@@ -109,6 +109,22 @@ LOGOUT_REDIRECT_URL = '/'
 ACCOUNT_LOGOUT_REDIRECT_URL = 'logout'
 ACCOUNT_LOGOUT_ON_GET = True 
 
+ACCOUNT_EMAIL_VERIFICATION = 'none'  # 이메일 인증 비활성화
+ACCOUNT_EMAIL_REQUIRED = True  # 이메일 필수
+SOCIALACCOUNT_QUERY_EMAIL = True
+
+SOCIALACCOUNT_PROVIDERS = {
+    'kakao': {
+        'APP': {
+            'client_id': '995eba6f9f9adcfb972fcf64f051e741',
+            'secret': '',
+            'key': ''
+        }
+    }
+}
+
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
