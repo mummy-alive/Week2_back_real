@@ -109,6 +109,14 @@ class PostListCreateView(generics.ListCreateAPIView):   #게시물 생성
     def perform_create(self, serializer):
         serializer.save(writer=self.request.user)
 
+class MyPostList(generics.ListCreateAPIView):
+    serializer_class = PostSerializer
+    permission_classes = [AllowAny]
+    
+    def get_queryset(self):
+        user = self.request.user
+        return Post.objects.filter(writer=user)
+    
 class ProfileList(generics.ListCreateAPIView):
     serializer_class = ProfileSerializer
     permission_classes = [AllowAny]

@@ -123,6 +123,18 @@ class Post(models.Model):
     def created_at_seoul_time(self):
         return self.created_at.astimezone(timezone.get_default_timezone()).strftime("%Y-%m-%d %H:%M")
     
+class PostTechTag(models.Model):
+    post_id = models.ForeignKey(Post, on_delete=models.CASCADE, related_name ='post_tech_tags')
+    tech_tag_id = models.ForeignKey(TechTag, on_delete=models.CASCADE, related_name ='post_tech_tags')
+    
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['post_id', 'tech_tag_id'], name='unique_post_tech_tag')
+        ]
+        
+    def __str__(self):
+        return f"{self.post_id} - {self.tech_tag_id}"
+    
 class PostScrap(models.Model):
     user_id = models.ForeignKey(User, related_name='scraps', on_delete=models.CASCADE)
     post_id = models.ForeignKey(Post, related_name='scraps', on_delete=models.CASCADE)

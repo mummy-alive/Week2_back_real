@@ -1,6 +1,6 @@
 from django.contrib.auth.hashers import make_password
 from rest_framework import serializers
-from .models import User, Post,PostScrap, UserLike, UserBlock, Profile, TechTag, ProfileTechTag
+from .models import User, Post, PostTechTag, PostScrap, UserLike, UserBlock, Profile, TechTag, ProfileTechTag
 
 # serializer: 데이터베이스에서 뽑은 데이터를 json으로 직렬화 or 역직렬화해주는 부분
 class UserRegistrationSerializer(serializers.ModelSerializer):
@@ -37,13 +37,6 @@ class UserBlockSerializer(serializers.ModelSerializer):
         model = UserBlock
         fields = '__all__'
 
-
-class PostSerializer(serializers.ModelSerializer): #역직렬화
-    writer = UserSerializer(read_only=True)
-    class Meta:
-        model = Post
-        fields = ['post_id', 'writer', 'title', 'content', 'post_tag', 'created_at']
-
 class PostScrapSerializer(serializers.ModelSerializer):
     class Meta:
         model = PostScrap
@@ -67,6 +60,24 @@ class ProfileSerializer(serializers.ModelSerializer):
         model = Profile
         fields = ['profile_id', 'email', 'class_tag', 'mbti', 'interest', 'is_recruit', 'tech_tags']
 
-        def get_tech_tags(self, obj):
-            profile_tech_tags = ProfileTechTag.objects.filter(profile_id = obj.profile_id)
-            return ProfileTechTagSerializer(profile_tech_tags, many=True).data
+    def get_tech_tags(self, obj):
+        profile_tech_tags = ProfileTechTag.objects.filter(profile_id = obj.profile_id)
+        return ProfileTechTagSerializer(profile_tech_tags, many=True).data
+
+class PostTechTagSerializer(serializers.ModelSerializer):
+    tech_tag = TechTagSerializer(source='tech_tag_id')
+    class Meta:
+        model = PostTechTag
+        fields = ['tech_tag']
+
+class PostSerializer(serializers.ModelSerializer): #역직렬화
+    tech_tags = PostTechTagSerializer(source='post_tech_tags', many=True)
+    writer = UserSerializer(read_only=True)
+    
+    class Meta:
+        model = Post
+        fields = ['post_id', 'writer', 'title', 'content', 'post_tag', 'created_at', 'tech_tags']
+        
+    # def get_tech_tags(self, obj):
+    #     post_tech_tags = PostTechTag.objects.filter(post_id = obj.post_id)
+    #     return PostTechTagSerializer(post_tech_tags, many=True).data
