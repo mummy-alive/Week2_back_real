@@ -1,23 +1,16 @@
-from django.contrib.auth import authenticate, login
+from django.shortcuts import get_object_or_404
+from django.http import JsonResponse, HttpResponse
+from django.contrib.auth import authenticate, login, logout
 from django.core.exceptions import ObjectDoesNotExist
-from django.utils import timezone
-from django.views.generic import TemplateView
-from django.http import HttpResponse, JsonResponse
-from django.shortcuts import render, get_object_or_404, redirect
 from django.views.decorators.http import require_GET
-from rest_framework.authtoken.models import Token
-from rest_framework.views import APIView
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework import status, viewsets, generics
-from blog.models import User
-
-from .serializers import UserSerializer, UserRegistrationSerializer, PostSerializer, ProfileSerializer, PostScrapSerializer
-from .serializers import UserRegistrationSerializer
+from rest_framework import status, generics, viewsets
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated, AllowAny
-from allauth.socialaccount.providers import registry
-from blog.models import User, Post, PostScrap, Profile, UserLike, UserBlock
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from django.views.generic import TemplateView
+from .models import User, Post, PostScrap, Profile, UserLike, UserBlock
+from .serializers import UserSerializer, UserRegistrationSerializer, PostSerializer, ProfileSerializer, PostScrapSerializer
 from blog.gemini_api import AIMatchmake
 
 class LoginTemplateView(TemplateView):
@@ -25,41 +18,31 @@ class LoginTemplateView(TemplateView):
 
 class LoginAPIView(APIView):
     permission_classes = [AllowAny]
+
     def post(self, request, *args, **kwargs):
         email = request.data.get('email')
         password = request.data.get('password')
-        
+
+        # Check if user already exists
         if User.objects.filter(email=email).exists():
             return Response({"error": "User with this email already exists"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Register new user
         serializer = UserRegistrationSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
             user.set_password(password)
             user.save()
-            token, created = Token.objects.get_or_create(user=user)
-            return Response({'token': token.key, 'user': UserSerializer(user).data}, status=status.HTTP_201_CREATED)
+
+            # Authenticate the user
+            authenticated_user = authenticate(request, email=email, password=password)
+            if authenticated_user is not None:
+                login(request, authenticated_user)
+                return Response({'user': UserSerializer(user).data}, status=status.HTTP_201_CREATED)
+            else:
+                return Response({"error": "Authentication failed"}, status=status.HTTP_401_UNAUTHORIZED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        #print(f'Email: {email}, Pasword: {password}')     # deprecated
-        #user = authenticate(request, email=email, password=password)
-        #print(f'Authenticated user: {user}')
-        # if user is not None:
-        #     # User authentication successful
-        #     login(request, user)
-        #     token, created = Token.objects.get_or_create(user=user)
-        #     return Response({'token': token.key, 'user': UserSerializer(user).data})
-        #     # return Response(UserSerializer(user).data)
-        # else:
-        #     return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
-            '''try:
-                # Try to get a user with the given email
-                user = user.objects.get(email=email)
-                # User with the email exists, so the password must be incorrect
-                return Response({"error": "Incorrect password"}, status=status.HTTP_400_BAD_REQUEST)
-            except User.DoesNotExist:
-                # User with the email does not exist
-                return Response({"error": "User with this email does not exist"}, status=status.HTTP_400_BAD_REQUEST)'''
 
 class RegisterView(APIView):
     permission_classes = [AllowAny]
@@ -70,21 +53,14 @@ class RegisterView(APIView):
             user = serializer.save()
             user.set_password(request.data.get('password'))
             user.save()
-            refresh = RefreshToken.for_user(user)
+            login(request, user)
             return Response({
-                'refresh': str(refresh),
-                'access': str(refresh.access_token),
+                'user': UserSerializer(user).data,
             }, status=status.HTTP_201_CREATED)
-            # try:
-            #     user = serializer.save()
-            #     token, created = Token.objects.get_or_create(user=user)
-            #     return Response({'token': token.key, "message": "User registered successfully"}, status=status.HTTP_201_CREATED)
-            # except Exception as e:
-            #     return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-@require_GET    #클라이언트의 요청이 들어오면:
+@require_GET
 def check_user(request):
     email = request.GET.get('email', None)
     response_data = {'exists': False}
@@ -99,25 +75,27 @@ def check_user(request):
     return JsonResponse(response_data)
 
 class LogoutView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     
     def post(self, request):
-        request.user.auth_token.delete()
+        logout(request)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-class ProfileCreateView(generics.CreateAPIView):
-    queryset = Profile.objects.all()
-    serializer_class = ProfileSerializer
+class ProfileCreateView(APIView):
     permission_classes = [AllowAny]
 
-    def perform_create(self, serializer):
-        #user = self.request.user
-        email = self.request.data.get('email')
-        user = User.objects.get(email=email)
-        serializer.save(email=user)
+    def post(self, request, *args, **kwargs):
+        serializer = ProfileSerializer(data=request.data)
+        if serializer.is_valid():
+            profile = serializer.save()
+            return Response(ProfileSerializer(profile).data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
+    def get(self, request, *args, **kwargs):
+        return Response({"detail": "Method GET not allowed"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
 def create_post(request):
     serializer = PostSerializer(data=request.data)
     if serializer.is_valid():
@@ -125,18 +103,18 @@ def create_post(request):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-@api_view(['GET']) 
-@permission_classes([IsAuthenticated])
+@api_view(['GET'])
+@permission_classes([AllowAny])
 def get_user_profile(request):
     user = request.user
     serializer = UserSerializer(user)
     return Response(serializer.data)
 
-def HomeView(request):          # 온보딩
+def HomeView(request):
     return HttpResponse("Welcome to the home page!")
 
-class MainViewSet(viewsets.ViewSet):  # 1번탭
-    permission_classes = [IsAuthenticated]
+class MainViewSet(viewsets.ViewSet):
+    permission_classes = [AllowAny]
 
     def list(self, request):
         recent_posts = Post.objects.order_by('-created_at')[:4]
@@ -163,20 +141,21 @@ class MainViewSet(viewsets.ViewSet):  # 1번탭
 
         return Response(response_data)
 
-class PostList(generics.ListCreateAPIView): # 2번탭
+class PostList(generics.ListCreateAPIView):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
     permission_classes = [AllowAny]
 
-class PostDetail(generics.RetrieveUpdateDestroyAPIView):    # 2번탭 - Post 세부내용
+class PostDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
     permission_classes = [AllowAny]
 
-class PostListCreateView(generics.ListCreateAPIView):   #게시물 생성
+class PostListCreateView(generics.ListCreateAPIView):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
-    
+    permission_classes = [AllowAny]
+
     def perform_create(self, serializer):
         serializer.save(writer=self.request.user)
 
@@ -206,12 +185,15 @@ class ProfileList(generics.ListCreateAPIView):
         
         matched_profiles = AIMatchmake(user_profile_dict, other_profiles)
         
+        if not matched_profiles:
+            return filtered_profiles
+        
         matched_emails = [profile['email']['email'] for profile in matched_profiles]
         return Profile.objects.filter(email__email__in=matched_emails)
 
 class LikeList(generics.ListCreateAPIView):
     serializer_class = ProfileSerializer
-    permission_classes = [IsAuthenticated] #권한수정 필요할수도?
+    permission_classes = [AllowAny]
 
     def get_queryset(self):
         user = self.request.user
@@ -220,16 +202,16 @@ class LikeList(generics.ListCreateAPIView):
     
 class BlockList(generics.ListCreateAPIView):
     serializer_class = ProfileSerializer
-    permission_classes = [IsAuthenticated] #권한수정 필요할수도?
+    permission_classes = [AllowAny]
 
     def get_queryset(self):
         user = self.request.user
-        blocked_user_ids = UserBlock.objects.filter(from_id=user).values_list('to_id',flat=True)
+        blocked_user_ids = UserBlock.objects.filter(from_id=user).values_list('to_id', flat=True)
         return Profile.objects.filter(email__in=blocked_user_ids)
     
 class ScrapList(generics.ListCreateAPIView):
     serializer_class = PostScrapSerializer
-    permission_classes = [IsAuthenticated] #권한수정 필요할수도?
+    permission_classes = [AllowAny]
 
     def get_queryset(self):
         user = self.request.user
@@ -238,8 +220,8 @@ class ScrapList(generics.ListCreateAPIView):
     
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def like_user(request,user_id):
+@permission_classes([AllowAny])
+def like_user(request, user_id):
     try:
         to_user = User.objects.get(id=user_id)
     except User.DoesNotExist:
@@ -251,7 +233,7 @@ def like_user(request,user_id):
         return Response({'status': 'already liked'}, status=status.HTTP_200_OK)
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def block_user(request, user_id):
     try:
         to_user = User.objects.get(id=user_id)
@@ -265,7 +247,7 @@ def block_user(request, user_id):
         return Response({'status': 'already blocked'}, status=status.HTTP_200_OK)
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def scrap_post(request, post_id):
     post = get_object_or_404(Post, pk=post_id)
     scrap, created = PostScrap.objects.get_or_create(user_id=request.user, post_id=post)
@@ -280,7 +262,7 @@ def check_user_by_mail(request, email):
     return JsonResponse({'exists': user_exists})
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def get_user_by_email(request, email):
     try:
         user = User.objects.get(email=email)

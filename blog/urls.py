@@ -39,9 +39,8 @@ urlpatterns = [
 
     #path('login/', LoginTemplateView.as_view(), name='login'),
     path('login/', LoginAPIView.as_view(), name='login'),           # 소셜로그인 받는 부분.
-    path('api/login/', LoginAPIView.as_view(), name='api-login'),  
     path('register/', RegisterView.as_view(), name='register'),
-    path('profiles/', ProfileCreateView.as_view(), name='profile-create'),
+    path('api/profile/', ProfileCreateView.as_view(), name='create-profile'), #온보딩 - 프로필 생성 뷰
     #path('users/<str:email>/', get_user_by_email, name='get-user-by-email'),
     
     path('api/token/', TokenObtainPairView.as_view(), name = 'token-obtain-pair'),

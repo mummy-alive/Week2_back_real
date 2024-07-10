@@ -58,23 +58,85 @@ class ProfileTechTagSerializer(serializers.ModelSerializer):
         model = ProfileTechTag
         fields = ['tech_tag']
 
+# class ProfileSerializer(serializers.ModelSerializer):
+#     tech_tags = ProfileTechTagSerializer(source='profile_tech_tags', many=True)
+#     email = UserSerializer(read_only=True)
+#     class Meta:
+#         model = Profile
+#         fields = ['profile_id', 'email', 'class_tag', 'mbti', 'interest', 'is_recruit', 'tech_tags']
+
+#     def get_tech_tags(self, obj):
+#         profile_tech_tags = ProfileTechTag.objects.filter(profile_id = obj.profile_id)
+#         return ProfileTechTagSerializer(profile_tech_tags, many=True).data
+
+#     def create(self, validated_data):
+#         tech_tags_data = validated_data.pop('profile_tech_tags')
+#         profile = Profile.objects.create(**validated_data)
+#         for tech_tag_data in tech_tags_data:
+#             ProfileTechTag.objects.create(profile_id=profile, **tech_tag_data)
+#         return profile
+
+# class ProfileSerializer(serializers.ModelSerializer):
+#     tech_tags = serializers.ListField(
+#         child=serializers.IntegerField(), write_only=True, required=False
+#     )
+#     email = UserSerializer(read_only=True)
+#     tech_tags_details = ProfileTechTagSerializer(source='profile_tech_tags', many=True, read_only=True)
+    
+#     class Meta:
+#         model = Profile
+#         fields = ['profile_id', 'email', 'class_tag', 'mbti', 'interest', 'is_recruit', 'tech_tags', 'tech_tags_details']
+    
+#     def create(self, validated_data):
+#         tech_tags_data = validated_data.pop('tech_tags', [])
+#         profile = Profile.objects.create(**validated_data)
+#         for tech_tag_id in tech_tags_data:
+#             tech_tag = TechTag.objects.get(pk=tech_tag_id)
+#             ProfileTechTag.objects.create(profile_id=profile, tech_tag_id=tech_tag)
+#         return profile
+
+# class ProfileSerializer(serializers.ModelSerializer):
+#     tech_tags = serializers.ListField(
+#         child=serializers.IntegerField(), write_only=True, required=False
+#     )
+#     email = serializers.EmailField(write_only=True)
+#     tech_tags_details = ProfileTechTagSerializer(source='profile_tech_tags', many=True, read_only=True)
+    
+#     class Meta:
+#         model = Profile
+#         fields = ['profile_id', 'email', 'class_tag', 'mbti', 'interest', 'is_recruit', 'tech_tags', 'tech_tags_details']
+    
+#     def create(self, validated_data):
+#         email = validated_data.pop('email')
+#         user = User.objects.get(email=email)
+#         profile = Profile.objects.create(email=user, **validated_data)
+#         tech_tags_data = validated_data.pop('tech_tags', [])
+#         for tech_tag_id in tech_tags_data:
+#             tech_tag = TechTag.objects.get(pk=tech_tag_id)
+#             ProfileTechTag.objects.create(profile_id=profile, tech_tag_id=tech_tag)
+#         return profile
+
 class ProfileSerializer(serializers.ModelSerializer):
-    tech_tags = ProfileTechTagSerializer(source='profile_tech_tags', many=True)
-    email = UserSerializer(read_only=True)
+    tech_tags = serializers.ListField(
+        child=serializers.IntegerField(), write_only=True, required=False
+    )
+    email = serializers.EmailField(write_only=True)
+    tech_tags_details = ProfileTechTagSerializer(source='profile_tech_tags', many=True, read_only=True)
+    
     class Meta:
         model = Profile
-        fields = ['profile_id', 'email', 'class_tag', 'mbti', 'interest', 'is_recruit', 'tech_tags']
-
-    def get_tech_tags(self, obj):
-        profile_tech_tags = ProfileTechTag.objects.filter(profile_id = obj.profile_id)
-        return ProfileTechTagSerializer(profile_tech_tags, many=True).data
-
+        fields = ['profile_id', 'email', 'class_tag', 'mbti', 'interest', 'is_recruit', 'tech_tags', 'tech_tags_details']
+    
     def create(self, validated_data):
-        tech_tags_data = validated_data.pop('profile_tech_tags')
-        profile = Profile.objects.create(**validated_data)
-        for tech_tag_data in tech_tags_data:
-            ProfileTechTag.objects.create(profile_id=profile, **tech_tag_data)
+        tech_tags_data = validated_data.pop('tech_tags', [])
+        email = validated_data.pop('email')
+        user = User.objects.get(email=email)
+        profile = Profile.objects.create(email=user, **validated_data)
+        for tech_tag_id in tech_tags_data:
+            tech_tag = TechTag.objects.get(pk=tech_tag_id)
+            ProfileTechTag.objects.create(profile_id=profile, tech_tag_id=tech_tag)
         return profile
+
 
 class PostTechTagSerializer(serializers.ModelSerializer):
     tech_tag = TechTagSerializer(source='tech_tag_id')
