@@ -9,6 +9,11 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         fields = ['email', 'password', 'name']
         extra_kwargs = {'password': {'write_only': True}}
 
+    def validate_email(self, value):
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError("Email is already in use")
+        return value
+
     def create(self, validated_data):
         # Create the user through the User model manager
         validated_data['password'] = make_password(validated_data.get('password'))
@@ -63,6 +68,13 @@ class ProfileSerializer(serializers.ModelSerializer):
     def get_tech_tags(self, obj):
         profile_tech_tags = ProfileTechTag.objects.filter(profile_id = obj.profile_id)
         return ProfileTechTagSerializer(profile_tech_tags, many=True).data
+
+    def create(self, validated_data):
+        tech_tags_data = validated_data.pop('profile_tech_tags')
+        profile = Profile.objects.create(**validated_data)
+        for tech_tag_data in tech_tags_data:
+            ProfileTechTag.objects.create(profile_id=profile, **tech_tag_data)
+        return profile
 
 class PostTechTagSerializer(serializers.ModelSerializer):
     tech_tag = TechTagSerializer(source='tech_tag_id')

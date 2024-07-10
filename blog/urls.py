@@ -26,6 +26,8 @@ from .views import (
     block_user,
     scrap_post,
     create_post,
+    get_user_by_email,
+    ProfileCreateView,
 )
 
 #router = DefaultRouter()
@@ -33,14 +35,17 @@ from .views import (
 
 urlpatterns = [
     # path('', include(router.urls)),
-    path('api/main/', MainViewSet.as_view({'get': 'list'}), name='main'),
+    path('api/main/', MainViewSet.as_view({'get': 'list'}), name='main'),   # 1번탭
 
-    path('login/', LoginTemplateView.as_view(), name='login'),
-    path('api/login/', LoginAPIView.as_view(), name='api-login'),
+    #path('login/', LoginTemplateView.as_view(), name='login'),
+    path('login/', LoginAPIView.as_view(), name='login'),           # 소셜로그인 받는 부분.
+    path('api/login/', LoginAPIView.as_view(), name='api-login'),  
     path('register/', RegisterView.as_view(), name='register'),
-
+    path('profiles/', ProfileCreateView.as_view(), name='profile-create'),
+    #path('users/<str:email>/', get_user_by_email, name='get-user-by-email'),
+    
     path('api/token/', TokenObtainPairView.as_view(), name = 'token-obtain-pair'),
-    path('api/token/refresh', TokenRefreshView.as_view(), name='token-refresh'),
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token-refresh'),
 
     # ToDo: Create Tab1 View
     # path('api/main/', MainViewSet.as_view(), name='main'),

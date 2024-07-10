@@ -24,20 +24,34 @@ class LoginTemplateView(TemplateView):
     template_name = 'blog/login.html'
 
 class LoginAPIView(APIView):
+    permission_classes = [AllowAny]
     def post(self, request, *args, **kwargs):
         email = request.data.get('email')
         password = request.data.get('password')
-        print(f'Email: {email}, Pasword: {password}')
-        user = authenticate(request, email=email, password=password)
-        print(f'Authenticated user: {user}')
-        if user is not None:
-            # User authentication successful
-            login(request, user)
+        
+        if User.objects.filter(email=email).exists():
+            return Response({"error": "User with this email already exists"}, status=status.HTTP_400_BAD_REQUEST)
+        serializer = UserRegistrationSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save()
+            user.set_password(password)
+            user.save()
             token, created = Token.objects.get_or_create(user=user)
-            return Response({'token': token.key, 'user': UserSerializer(user).data})
-            # return Response(UserSerializer(user).data)
+            return Response({'token': token.key, 'user': UserSerializer(user).data}, status=status.HTTP_201_CREATED)
         else:
-            return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        #print(f'Email: {email}, Pasword: {password}')     # deprecated
+        #user = authenticate(request, email=email, password=password)
+        #print(f'Authenticated user: {user}')
+        # if user is not None:
+        #     # User authentication successful
+        #     login(request, user)
+        #     token, created = Token.objects.get_or_create(user=user)
+        #     return Response({'token': token.key, 'user': UserSerializer(user).data})
+        #     # return Response(UserSerializer(user).data)
+        # else:
+        #     return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
             '''try:
                 # Try to get a user with the given email
                 user = user.objects.get(email=email)
@@ -48,13 +62,25 @@ class LoginAPIView(APIView):
                 return Response({"error": "User with this email does not exist"}, status=status.HTTP_400_BAD_REQUEST)'''
 
 class RegisterView(APIView):
+    permission_classes = [AllowAny]
+
     def post(self, request, *args, **kwargs):
         serializer = UserRegistrationSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
-            token, created = Token.objects.get_or_create(user=user)
-            return Response({'token':token.key,
-                             "message": "User registered successfully"}, status=status.HTTP_201_CREATED)
+            user.set_password(request.data.get('password'))
+            user.save()
+            refresh = RefreshToken.for_user(user)
+            return Response({
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),
+            }, status=status.HTTP_201_CREATED)
+            # try:
+            #     user = serializer.save()
+            #     token, created = Token.objects.get_or_create(user=user)
+            #     return Response({'token': token.key, "message": "User registered successfully"}, status=status.HTTP_201_CREATED)
+            # except Exception as e:
+            #     return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -78,6 +104,17 @@ class LogoutView(APIView):
     def post(self, request):
         request.user.auth_token.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+class ProfileCreateView(generics.CreateAPIView):
+    queryset = Profile.objects.all()
+    serializer_class = ProfileSerializer
+    permission_classes = [AllowAny]
+
+    def perform_create(self, serializer):
+        #user = self.request.user
+        email = self.request.data.get('email')
+        user = User.objects.get(email=email)
+        serializer.save(email=user)
     
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -242,3 +279,12 @@ def check_user_by_mail(request, email):
     user_exists = User.objects.filter(email=email).exists()
     return JsonResponse({'exists': user_exists})
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_user_by_email(request, email):
+    try:
+        user = User.objects.get(email=email)
+        serializer = UserSerializer(user)
+        return Response(serializer.data)
+    except User.DoesNotExist:
+        return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
