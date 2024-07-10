@@ -6,7 +6,8 @@ import google.generativeai as genai
 def AIMatchmake(user_profile, other_profiles):
     genai.configure(api_key='AIzaSyB7y9Bji5w_rlYPkn6bdwbt83kKMjK7yvw')
 
-    model = genai.models.get('gemini-1.5-flash')
+    model = genai.GenerativeModel('gemini-1.5-flash',
+                              generation_config={"response_mime_type": "application/json"})
     prompt = f"""
     List the most suitable teammates from the given user profile. Use the following JSON schema for the response: 
     The list shall be sorted in descending order based on compatibility.
@@ -19,7 +20,7 @@ def AIMatchmake(user_profile, other_profiles):
     repeat = 0
     while repeat < 5:
         try:
-            response = model.generate(prompt=prompt, max_tokens=200)
+            response = model.generate_content(prompt)
             response_data = json.loads(response.generations[0].text)
             return response_data
         except Exception as e:

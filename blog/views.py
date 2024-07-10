@@ -167,12 +167,45 @@ class MyPostList(generics.ListCreateAPIView):
         user = self.request.user
         return Post.objects.filter(writer=user)
     
+# class ProfileList(generics.ListCreateAPIView):
+#     serializer_class = ProfileSerializer
+#     permission_classes = [AllowAny]
+    
+#     def get_queryset(self):
+#         user = self.request.user
+#         liked_user_ids = UserLike.objects.filter(from_id=user).values_list('to_id', flat=True)
+#         blocked_user_ids = UserBlock.objects.filter(from_id=user).values_list('to_id', flat=True)
+        
+#         filtered_profiles = Profile.objects.filter(is_recruit=True).exclude(email__in=liked_user_ids).exclude(email__in=blocked_user_ids)
+        
+#         other_profiles = ProfileSerializer(filtered_profiles, many=True).data
+        
+#         user_profile = Profile.objects.get(email=user.email)
+#         user_profile_dict = ProfileSerializer(user_profile).data
+        
+#         matched_profiles = AIMatchmake(user_profile_dict, other_profiles)
+        
+#         if not matched_profiles:
+#             return filtered_profiles
+        
+#         matched_emails = [profile['email']['email'] for profile in matched_profiles]
+#         return Profile.objects.filter(email__email__in=matched_emails)
+
 class ProfileList(generics.ListCreateAPIView):
     serializer_class = ProfileSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [AllowAny]  # 모든 사용자 접근 가능
     
     def get_queryset(self):
-        user = self.request.user
+        email = self.request.query_params.get('email', None)
+        
+        if email is None:
+            return Profile.objects.none()  # 이메일이 없으면 빈 QuerySet 반환
+        
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return Profile.objects.none()  # 해당 이메일의 사용자가 없으면 빈 QuerySet 반환
+        
         liked_user_ids = UserLike.objects.filter(from_id=user).values_list('to_id', flat=True)
         blocked_user_ids = UserBlock.objects.filter(from_id=user).values_list('to_id', flat=True)
         
@@ -180,7 +213,7 @@ class ProfileList(generics.ListCreateAPIView):
         
         other_profiles = ProfileSerializer(filtered_profiles, many=True).data
         
-        user_profile = Profile.objects.get(email=user.email)
+        user_profile = Profile.objects.get(email=user)
         user_profile_dict = ProfileSerializer(user_profile).data
         
         matched_profiles = AIMatchmake(user_profile_dict, other_profiles)
@@ -188,8 +221,66 @@ class ProfileList(generics.ListCreateAPIView):
         if not matched_profiles:
             return filtered_profiles
         
-        matched_emails = [profile['email']['email'] for profile in matched_profiles]
-        return Profile.objects.filter(email__email__in=matched_emails)
+        matched_emails = [profile['email'] for profile in matched_profiles]
+        return Profile.objects.filter(email__in=matched_emails)
+
+    def get(self, request, *args, **kwargs):
+        email = request.query_params.get('email', None)
+        if email is None:
+            return Response({"detail": "Email parameter is required."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            User.objects.get(email=email)
+        except User.DoesNotExist:
+            return Response({"detail": "User with the provided email does not exist."}, status=status.HTTP_404_NOT_FOUND)
+        
+        return super().get(request, *args, **kwargs)
+
+
+# class ProfileList(generics.ListCreateAPIView):
+#     serializer_class = ProfileSerializer
+#     permission_classes = [AllowAny]  # 모든 사용자 접근 가능
+    
+#     def get_queryset(self):
+#         email = self.request.query_params.get('email', None)
+        
+#         if email is None:
+#             return Profile.objects.none()  # 이메일이 없으면 빈 QuerySet 반환
+        
+#         try:
+#             user = User.objects.get(email=email)
+#         except User.DoesNotExist:
+#             return Profile.objects.none()  # 해당 이메일의 사용자가 없으면 빈 QuerySet 반환
+        
+#         liked_user_ids = UserLike.objects.filter(from_id=user).values_list('to_id', flat=True)
+#         blocked_user_ids = UserBlock.objects.filter(from_id=user).values_list('to_id', flat=True)
+        
+#         filtered_profiles = Profile.objects.filter(is_recruit=True).exclude(email__in=liked_user_ids).exclude(email__in=blocked_user_ids)
+        
+#         other_profiles = ProfileSerializer(filtered_profiles, many=True).data
+        
+#         user_profile = Profile.objects.get(email=user.email)
+#         user_profile_dict = ProfileSerializer(user_profile).data
+        
+#         matched_profiles = AIMatchmake(user_profile_dict, other_profiles)
+        
+#         if not matched_profiles:
+#             return filtered_profiles
+        
+#         matched_emails = [profile['email'] for profile in matched_profiles]
+#         return Profile.objects.filter(email__in=matched_emails)
+
+#     def get(self, request, *args, **kwargs):
+#         email = request.query_params.get('email', None)
+#         if email is None:
+#             return Response({"detail": "Email parameter is required."}, status=status.HTTP_400_BAD_REQUEST)
+        
+#         try:
+#             User.objects.get(email=email)
+#         except User.DoesNotExist:
+#             return Response({"detail": "User with the provided email does not exist."}, status=status.HTTP_404_NOT_FOUND)
+        
+#         return super().get(request, *args, **kwargs)
 
 class LikeList(generics.ListCreateAPIView):
     serializer_class = ProfileSerializer
